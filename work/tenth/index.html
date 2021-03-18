@@ -28,6 +28,106 @@
     <script src="../../common/js/jquery.js"></script>
     <script src="./js/appid.js"></script>
     <script>
+      $(function() {
+
+        var searchWord = '';
+        var page = null;
+
+        $('[data-js="search-btn"]').on('click', function() {
+          searchWord = $('[data-js="search-word"]').val();
+          page = 1
+          resetLists();
+          showBookData();
+        });
+
+        $(document).on('click', '[data-js=page-prev]', function(event) {
+          event.preventDefault();
+          if ($(this).hasClass('disabled')) {
+            return false;
+          }
+          page--;
+          resetLists();
+          showBookData();
+        });
+
+        $(document).on('click', '[data-js=page-next]', function(event) {
+          event.preventDefault();
+          if ($(this).hasClass('disabled')) {
+            return false;
+          }
+          page++;
+          resetLists();
+          showBookData();
+        });
+
+        function resetLists() {
+          $('[data-js="pager"]').remove();
+          $('.lists-item').remove();
+          $('.message').empty();
+        } 
+
+        function showBookData() {
+          $.ajax({
+            url: 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20170404',
+            type: 'GET',
+            datatype: 'json',
+            data: {
+              applicationId: appId,
+              booksGenreId: '001',
+              keyword: searchWord,
+              hits: 20,
+              page: page
+            },
+          }).done(function(data) {
+            console.log(data);
+            if (data.count === 0) {
+              $('.message').html('<p>検索結果が見つかりませんでした。<br>別のキーワードで検索して下さい。</p>');
+            } else {
+              showLists(data);
+              showPager(data);
+            }
+          }).fail(function(error) {
+
+          });
+        }
+
+        function showLists(data) {
+          var li = '';
+          $.each(data.Items, function(index, bookArray) {
+            li += '<li class="lists__item">' +
+                  '<div class="lists__item__inner">' +
+                    '<a href="' + bookArray.Item.itemUrl + '" class="lists__item__link" target="_blank">' +
+                      '<img src="' + bookArray.Item.mediumImageUrl + '" class="lists__item__img" alt="">' +
+                      '<p class="lists__item__detail">作品名：' + bookArray.Item.title + '</p>' +
+                      '<p class="lists__item__detail">作者　：' + bookArray.Item.author + '</p>' +
+                      '<p class="lists__item__detail">出版社：' + bookArray.Item.publisherName + '</p>' +
+                    '</a>' +
+                  '</div>' +
+                  '</li>';
+          });
+          $('.lists').html(li);
+        }
+
+        function showPager(data) {
+          var firstPage = 1;
+          var pager = '<div class="pager" data-js="pager">' +
+                        '<div class="counter">' +
+                          '<span class="counter-current">' + data.page + '</span>/<span class="counter-all">' + data.pageCount + '</span>' +
+                        '</div>' +
+                        '<div class="btn-wrapper">' +
+                          '<a class="btn-item" data-js="page-prev" href="">前へ</a>' +
+                          '<a class="btn-item" data-js="page-next" href="">次へ</a>' +
+                        '</div>' +
+                      '</div>';
+          $('.lists').after(pager);
+          if (data.page === firstPage) {
+            $('[data-js="page-prev"]').addClass('disabled');
+          }
+          if (data.page === data.pageCount) {
+            $('[data-js="page-next"]').addClass('disabled');
+          }
+        }
+      });
       // 楽天ブックスの総合検索APIを使って製作してください。
       // answerの挙動を良く見てね！
       //
