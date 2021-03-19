@@ -36,7 +36,6 @@
         $('[data-js="search-btn"]').on('click', function() {
           searchWord = $('[data-js="search-word"]').val();
           page = 1
-          resetLists();
           showBookData();
         });
 
@@ -46,7 +45,6 @@
             return false;
           }
           page--;
-          resetLists();
           showBookData();
         });
 
@@ -79,6 +77,7 @@
               page: page
             },
           }).done(function(data) {
+            resetLists();
             console.log(data);
             if (data.count === 0) {
               $('.message').html('<p>検索結果が見つかりませんでした。<br>別のキーワードで検索して下さい。</p>');
@@ -87,7 +86,8 @@
               showPager(data);
             }
           }).fail(function(error) {
-
+            console.log(error);
+            showErrorMessage(error);
           });
         }
 
@@ -126,6 +126,34 @@
           if (data.page === data.pageCount) {
             $('[data-js="page-next"]').addClass('disabled');
           }
+        }
+
+        function showErrorMessage(error) {
+          var errorMessage = '';
+          switch (error.status) {
+            case 0:
+              errorMessage = '通信に失敗しました。インターネットの接続をご確認ください。';
+              break;
+            case 400:
+              errorMessage = '検索文字が入力されていません。';
+              break;
+            case 404:
+              errorMessage = '対象のデータが存在しません。';
+              break;
+            case 429:
+              errorMessage = 'リクエスト過多です。しばらく時間を置いてからお試しください。';
+              break;
+            case 500:
+              errorMessage = 'システムエラー。長時間続くようであれば、こちらよりごお問い合わせください。';
+              break;
+            case 503:
+              errorMessage = 'メンテナンス中です。';
+              break;
+            default:
+              errorMessage = '予期せぬエラーが発生しました。';
+              break;
+          }
+          $('.message').html('<p>' + errorMessage + '</p>');
         }
       });
       // 楽天ブックスの総合検索APIを使って製作してください。
